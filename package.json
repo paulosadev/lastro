@@ -1,0 +1,8 @@
+{
+  "name": "lastro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lastro: IA que revisa promessas de creators antes da publicação (Desafio de Inovação YouShop 2027)",
+  "type": "module",
+  "engines": { "node": ">=18" }
+}

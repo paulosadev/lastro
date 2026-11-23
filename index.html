@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lastro — protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: inspetor calmo e útil, não policial — revisa antes de publicar
+   IDEA: prova de texto corrigida com marca-texto, como um revisor marca um contrato
+   PICTURE: o próprio post do creator, com trechos marcados e notas na margem
+   COLOUR and TYPE: papel branco, tinta quase preta, marca-texto amarelo, vermelho de alerta; Archivo + Inter
+   LAYOUT: ferramenta no topo, texto à esquerda e notas à direita; painel de Operações na segunda aba */
+:root{color-scheme:light dark;
+ --bg:light-dark(#ffffff,#121314);--paper:light-dark(#f6f5f1,#1c1d1f);--ink:light-dark(#141414,#f1f0ec);
+ --mute:light-dark(#5c5c5c,#a8a8a4);--line:light-dark(#dcdad3,#33352f);
+ --hi:light-dark(#ffe14d,#e0c22c);--hiInk:#141414;--red:light-dark(#d4210f,#ff6a55);--redBg:light-dark(#fde4e0,#3a1e1a);
+ --ok:light-dark(#0f6b4f,#6fd3ad);--okBg:light-dark(#dff3ea,#16302a);--warnBg:light-dark(#fff4c2,#3a3212)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:Archivo,Inter,sans-serif;line-height:1.08;margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,4.4vw,46px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:22px;font-weight:700}
+.band{padding:clamp(24px,4vw,56px) max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+header.band{padding-bottom:12px}
+.lede{max-width:66ch;color:var(--mute);margin:12px 0 0}
+.mark{background:var(--hi);color:var(--hiInk);padding:0 .15em;border-radius:2px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px;border-bottom:1px solid var(--line)}
+.tabs button{font:600 15px Inter,sans-serif;background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);padding:12px 4px;margin-right:18px;min-height:44px;cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--ink)}
+button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.view[hidden]{display:none}
+.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:28px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:600;font-size:14px;display:block;margin:0 0 6px}
+select,textarea{width:100%;font:16px/1.5 Inter,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+textarea{min-height:150px;resize:vertical}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.chip{font:500 14px Inter,sans-serif;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:8px 14px;min-height:40px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--mute);margin-top:14px}
+.sheet b{color:var(--ink)}
+.go{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{font:600 16px Inter,sans-serif;background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:12px 20px;min-height:46px;cursor:pointer}
+.btn:disabled{opacity:.55;cursor:progress}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.small{font-size:13px;color:var(--mute)}
+.proof{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:22px;min-height:340px}
+.verdict{display:flex;gap:14px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.badge{font:800 14px Archivo,sans-serif;padding:6px 12px;border-radius:6px}
+.b-alto{background:var(--redBg);color:var(--red)}.b-medio{background:var(--warnBg);color:light-dark(#7a5c00,#f0d36a)}.b-baixo{background:var(--okBg);color:var(--ok)}
+.post{font-size:17px;line-height:1.75;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:16px;border:1px solid var(--line)}
+.post mark{background:var(--hi);color:var(--hiInk);border-radius:2px;padding:0 2px;box-decoration-break:clone}
+.post mark.alto{background:light-dark(#ffb3a8,#ff8a78);}
+.post sup{font:700 11px Inter,sans-serif;margin-left:2px}
+ol.notes{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:12px}
+ol.notes li{border-left:4px solid var(--hi);padding:4px 0 4px 14px}
+ol.notes li.alto{border-color:var(--red)}
+.n-head{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
+.n-num{font:800 14px Archivo,sans-serif}
+.n-rule{font-size:13px;color:var(--mute)}
+.n-fix{margin-top:4px;font-size:15px}.n-fix b{font-weight:600}
+.rev{margin-top:18px;border-top:1px dashed var(--line);padding-top:14px}
+.rev p{margin:6px 0 0;white-space:pre-wrap}
+.empty{color:var(--mute);display:grid;place-items:center;min-height:300px;text-align:center}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:20px 0}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--paper);border-radius:10px;padding:16px}
+.kpi strong{display:block;font:800 clamp(26px,3.4vw,36px)/1 Archivo,sans-serif;margin-bottom:6px}
+.kpi span{font-size:14px;color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;font-size:13px;color:var(--mute);font-weight:600;border-bottom:1px solid var(--line);padding:10px 8px}
+td{border-bottom:1px solid var(--line);padding:12px 8px;vertical-align:top}
+td.num,th.num{text-align:right;white-space:nowrap}
+.bar{height:8px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--red)}
+.act{font-size:14px}
+.note{margin-top:14px}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute)}.stack td:empty{display:none}}
+@media(prefers-reduced-motion:no-preference){.proof.in{animation:rise .35s ease-out}@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="band"><div class="wrap">
+  <h1>Lastro: toda promessa de creator com <span class="mark">lastro</span> no produto</h1>
+  <p class="lede">Protótipo do Desafio de Inovação YouShop 2027, por Paulo Levy. A IA lê o post antes de ele ir ao ar, compara cada promessa com a ficha do produto e com as regras do Conar, da Anvisa e do CDC, e devolve uma versão que vende sem prometer o que o produto não entrega.</p>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-creator" aria-selected="true" aria-controls="v-creator">Creator: revisar antes de postar</button>
+    <button role="tab" id="t-ops" aria-selected="false" aria-controls="v-ops">Operações: painel de risco</button>
+  </div>
+</div></header>
+
+<main>
+<section class="band view" id="v-creator" role="tabpanel" aria-labelledby="t-creator" style="padding-top:8px"><div class="wrap grid">
+  <div>
+    <label>Exemplos</label>
+    <div class="presets" id="presets"></div>
+    <label for="prod">Produto divulgado</label>
+    <select id="prod"></select>
+    <div class="sheet" id="sheet"></div>
+    <label for="txt" style="margin-top:16px">Legenda ou roteiro do post</label>
+    <textarea id="txt"></textarea>
+    <div class="go">
+      <button class="btn" id="run">Analisar com IA</button>
+      <span class="small" id="status">Os exemplos já vêm analisados. Edite o texto para pedir uma análise nova.</span>
+    </div>
+  </div>
+  <div class="proof" id="out" aria-live="polite"></div>
+</div></section>
+
+<section class="band view" id="v-ops" role="tabpanel" aria-labelledby="t-ops" hidden style="padding-top:8px"><div class="wrap">
+  <h2>Onde o risco está concentrado nesta semana</h2>
+  <p class="small">Dados de exemplo, criados para ilustrar o painel.</p>
+  <div class="kpis">
+    <div class="kpi"><strong>1.284</strong><span>posts com link YouShop analisados</span></div>
+    <div class="kpi"><strong>212</strong><span>com promessa sem lastro no produto</span></div>
+    <div class="kpi"><strong>71%</strong><span>corrigidos pelo próprio creator antes de publicar</span></div>
+    <div class="kpi"><strong>4</strong><span>casos enviados para revisão humana</span></div>
+  </div>
+  <table class="stack">
+    <thead><tr><th>Creator</th><th>Produto</th><th class="num">Posts</th><th class="num">Achados graves</th><th class="num">Reembolsos "não era o prometido" (30 d)</th><th>Risco</th><th>Próximo passo sugerido</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <p class="small note">A IA sugere, quem decide é uma pessoa de Operações. Nenhum link é suspenso automaticamente.</p>
+</div></section>
+</main>
+
+<script>
+{
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PRODUTOS=[
+ {id:'termo',nome:'Termogênico TermoMax (suplemento alimentar)',ficha:'Suplemento alimentar de cafeína em cápsulas. Alegações aprovadas pela Anvisa para este produto: nenhuma relacionada a emagrecimento, ansiedade ou doenças. Oferta vigente: 30% OFF até 30/11, estoque normal.'},
+ {id:'curso',nome:'Curso Tráfego do Zero (infoproduto)',ficha:'Curso online de tráfego pago, 40 horas. A página de vendas diz: "resultados dependem da dedicação de cada aluno; não há garantia de renda". Garantia: 7 dias (direito de arrependimento do CDC). Exige investimento em anúncios, mínimo sugerido de R$ 300.'},
+ {id:'serum',nome:'Sérum Vitamina C Luma (cosmético)',ficha:'Cosmético grau 1. Benefícios declarados pela marca: hidratação e uniformização do tom da pele com uso contínuo. Cupom de creator: 15% OFF.'}
+];
+const EXEMPLOS=[
+ {prod:'termo',rotulo:'Suplemento',texto:'Gente, esse termogênico mudou minha vida!! Perdi 8kg em 15 dias sem dieta nenhuma. Ele acelera o metabolismo e ainda combate a ansiedade. Médicos odeiam isso. Últimas unidades com 50% OFF só hoje, link na bio!',
+  r:{risco:'alto',resumo:'Promete emagrecimento e efeito terapêutico, que suplemento não pode alegar, e anuncia uma oferta diferente da real. Também falta avisar que é publicidade.',
+   achados:[
+    {trecho:'Perdi 8kg em 15 dias sem dieta nenhuma',nivel:'alto',regra:'Anvisa: alegações de suplementos',motivo:'Suplemento alimentar não pode prometer emagrecimento, e um resultado pessoal vira promessa para quem compra.',sugestao:'Uso o TermoMax junto com treino e alimentação, e ele virou parte da minha rotina.'},
+    {trecho:'combate a ansiedade',nivel:'alto',regra:'Anvisa: alegação terapêutica',motivo:'Tratar ou prevenir doença é alegação exclusiva de medicamento registrado.',sugestao:'Remover. Não há alegação de saúde aprovada para este produto.'},
+    {trecho:'acelera o metabolismo',nivel:'medio',regra:'Ficha do produto',motivo:'A ficha não traz essa alegação aprovada.',sugestao:'Fale da experiência de uso sem atribuir efeito no corpo.'},
+    {trecho:'Médicos odeiam isso',nivel:'medio',regra:'Conar: apelo sensacionalista',motivo:'Desqualifica profissionais de saúde para gerar clique.',sugestao:'Remover.'},
+    {trecho:'Últimas unidades com 50% OFF só hoje',nivel:'alto',regra:'Ficha do produto + CDC art. 37',motivo:'A oferta real é 30% OFF até 30/11, com estoque normal. Escassez e desconto falsos são publicidade enganosa.',sugestao:'Tá com 30% OFF até dia 30/11.'}
+   ],falta_identificacao:true,
+   versao_revisada:'#publi | link de afiliado\nTô usando o TermoMax junto com treino e alimentação, e ele virou parte da minha rotina. Tá com 30% OFF até dia 30/11, link na bio!'}},
+ {prod:'curso',rotulo:'Curso online',texto:'Esse curso me fez sair do zero pra R$10 mil por mês em 30 dias, trabalhando 1h por dia. É garantido: se não lucrar, devolvo seu dinheiro. Não precisa de experiência nem investimento. Link aqui!',
+  r:{risco:'alto',resumo:'Promete renda e uma garantia que o produtor não oferece, e esconde um custo que a própria página de vendas informa.',
+   achados:[
+    {trecho:'sair do zero pra R$10 mil por mês em 30 dias',nivel:'alto',regra:'Ficha do produto + CDC art. 37',motivo:'A página de vendas diz que não há garantia de renda. Prometer valor e prazo induz o comprador ao erro.',sugestao:'Foi o curso que me ensinou a montar minhas primeiras campanhas. O resultado depende de quanto você aplica.'},
+    {trecho:'É garantido: se não lucrar, devolvo seu dinheiro',nivel:'alto',regra:'Ficha do produto',motivo:'Essa garantia não existe. O produto tem só os 7 dias de arrependimento, e a promessa vai virar pedido de reembolso e chargeback.',sugestao:'Você tem 7 dias para testar e pedir reembolso se não gostar.'},
+    {trecho:'nem investimento',nivel:'alto',regra:'Ficha do produto',motivo:'O curso exige investimento em anúncios (mínimo sugerido de R$ 300).',sugestao:'Não precisa de experiência, mas reserve uma verba para anúncios.'}
+   ],falta_identificacao:true,
+   versao_revisada:'#publi | link de afiliado\nFoi o Tráfego do Zero que me ensinou a montar minhas primeiras campanhas. Não precisa de experiência, mas reserve uma verba para anúncios. O resultado depende de quanto você aplica, e você tem 7 dias para testar. Link aqui!'}},
+ {prod:'serum',rotulo:'Cosmético',texto:'#publi Tô usando esse sérum de vitamina C há 3 semanas e senti a pele mais uniforme e hidratada. Cada pele reage de um jeito, tá? Link com 15% de desconto aqui',
+  r:{risco:'baixo',resumo:'Post pronto para publicar. A experiência é pessoal, condiz com a ficha, a publicidade está identificada e o desconto confere.',achados:[],falta_identificacao:false,versao_revisada:''}}
+];
+const $=id=>document.getElementById(id);
+let atual=0,editado=false;
+
+$('presets').innerHTML=EXEMPLOS.map((e,i)=>`<button class="chip" data-i="${i}" aria-pressed="${i===0}">${esc(e.rotulo)}</button>`).join('');
+$('prod').innerHTML=PRODUTOS.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('');
+const ficha=()=>PRODUTOS.find(p=>p.id===$('prod').value);
+const showSheet=()=>{$('sheet').innerHTML='<b>Ficha cadastrada pelo produtor:</b> '+esc(ficha().ficha)};
+
+function render(texto,r){
+  const out=$('out');out.classList.remove('in');void out.offsetWidth;out.classList.add('in');
+  const nomes={alto:'Alto risco',medio:'Atenção',baixo:'Pronto para postar'};
+  const achados=(r.achados||[]).filter(a=>a&&a.trecho);
+  // marcar trechos no texto
+  let spans=[];achados.forEach((a,i)=>{const k=texto.toLowerCase().indexOf(String(a.trecho).toLowerCase());if(k>=0&&!spans.some(s=>k<s.e&&k+a.trecho.length>s.s))spans.push({s:k,e:k+a.trecho.length,i,n:a.nivel})});
+  spans.sort((x,y)=>x.s-y.s);let html='',p=0;
+  spans.forEach(s=>{html+=esc(texto.slice(p,s.s))+`<mark class="${s.n==='alto'?'alto':''}">${esc(texto.slice(s.s,s.e))}</mark><sup>${s.i+1}</sup>`;p=s.e});
+  html+=esc(texto.slice(p));
+  const nivel=['alto','medio','baixo'].includes(r.risco)?r.risco:'medio';
+  let notas=achados.map((a,i)=>`<li class="${a.nivel==='alto'?'alto':''}"><div class="n-head"><span class="n-num">${i+1}</span><span class="n-rule">${esc(a.regra||'')}</span></div><div>${esc(a.motivo||'')}</div><div class="n-fix"><b>Sugestão:</b> ${esc(a.sugestao||'')}</div></li>`).join('');
+  if(r.falta_identificacao)notas+=`<li class="alto"><div class="n-head"><span class="n-num">!</span><span class="n-rule">Conar: Guia de Influenciadores (2026)</span></div><div>Link com comissão é publicidade, e o post não avisa isso.</div><div class="n-fix"><b>Sugestão:</b> abra com "#publi" ou "link de afiliado".</div></li>`;
+  out.innerHTML=`<div class="verdict"><span class="badge b-${nivel}">${nomes[nivel]}</span><span class="small">${achados.length+(r.falta_identificacao?1:0)} ponto(s) para revisar</span></div>
+   <p style="margin:0 0 14px">${esc(r.resumo||'')}</p><div class="post">${html}</div>
+   ${notas?`<ol class="notes">${notas}</ol>`:''}
+   ${r.versao_revisada?`<div class="rev"><h2 style="font-size:17px">Versão revisada</h2><p>${esc(r.versao_revisada)}</p><div class="go"><button class="btn ghost" id="usar">Usar esta versão</button></div></div>`:''}`;
+  const u=$('usar');if(u)u.addEventListener('click',()=>{$('txt').value=r.versao_revisada;editado=true;$('status').textContent='Texto substituído. Analise de novo para conferir.'});
+}
+
+function carregar(i){atual=i;editado=false;const e=EXEMPLOS[i];$('prod').value=e.prod;$('txt').value=e.texto;showSheet();
+  document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',String(+c.dataset.i===i)));render(e.texto,e.r);
+  $('status').textContent='Os exemplos já vêm analisados. Edite o texto para pedir uma análise nova.'}
+
+$('presets').addEventListener('click',ev=>{const b=ev.target.closest('.chip');if(b)carregar(+b.dataset.i)});
+$('prod').addEventListener('change',()=>{showSheet();editado=true});
+$('txt').addEventListener('input',()=>{editado=true});
+
+$('run').addEventListener('click',async()=>{
+  const texto=$('txt').value.trim();if(!texto){$('status').textContent='Escreva a legenda primeiro.';return}
+  if(!editado){render(texto,EXEMPLOS[atual].r);return}
+  if(texto.length>2000){$('status').textContent='Use até 2.000 caracteres.';return}
+  $('run').disabled=true;$('status').textContent='Analisando…';
+  try{
+    const resp=await fetch('/api/analisar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({produto:$('prod').value,texto})});
+    const data=await resp.json().catch(()=>({}));
+    if(!resp.ok)throw Object.assign(new Error(data.erro||'falha'),{status:resp.status,msg:data.erro});
+    render(texto,data);$('status').textContent='Análise feita pela IA agora.';
+  }catch(err){$('status').textContent=err&&err.status===429?'Muitas análises seguidas. Tente de novo em um minuto.':(err&&err.msg)||'Não foi possível analisar agora. Os exemplos continuam disponíveis.'}
+  finally{$('run').disabled=false}
+});
+
+const CREATORS=[
+ ['@vidafit.ju','TermoMax',38,14,22,88,'Conversa de orientação + revisão humana dos próximos posts'],
+ ['@rendaextra.leo','Tráfego do Zero',21,9,17,81,'Revisão humana: promessa de renda recorrente'],
+ ['@marinamaquia','Sérum Luma',44,1,0,9,'Nenhuma: manter'],
+ ['@treinocomcaio','TermoMax',17,4,5,46,'Enviar guia de alegações permitidas'],
+ ['@dicasdabia','Tráfego do Zero',26,2,3,24,'Lembrete automático de #publi'],
+ ['@peleboa.tati','Sérum Luma',12,0,0,4,'Nenhuma: manter']
+];
+$('rows').innerHTML=CREATORS.map(c=>`<tr><td><b>${esc(c[0])}</b></td><td>${esc(c[1])}</td><td class="num">${c[2]}</td><td class="num">${c[3]}</td><td class="num">${c[4]}</td><td style="min-width:110px">${c[5]}/100<div class="bar"><i style="width:${c[5]}%"></i></div></td><td class="act">${esc(c[6])}</td></tr>`).join('');
+
+document.querySelector('.tabs').addEventListener('click',ev=>{const b=ev.target.closest('button[role=tab]');if(!b)return;
+  document.querySelectorAll('[role=tab]').forEach(t=>{const on=t===b;t.setAttribute('aria-selected',String(on));$(t.getAttribute('aria-controls')).hidden=!on});
+  try{history.replaceState(null,'',b.id==='t-ops'?'#operacoes':'#creator')}catch(e){}});
+if(location.hash==='#operacoes')$('t-ops').click();
+carregar(0);
+}
+</script>
+</body>
+</html>
